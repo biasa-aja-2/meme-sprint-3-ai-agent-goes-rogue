@@ -364,6 +364,15 @@ def main():
     draw_chat(cv)
     size = write_png(cv, OUT)
     print(f"wrote {OUT} ({W}x{H}, {size} bytes)")
+    # Verify the written file by reading it back: PNG signature,
+    # IHDR dimensions, and the 1 MiB cap the brief sets.
+    with open(OUT, "rb") as f:
+        data = f.read()
+    assert data[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG file"
+    assert len(data) == size, "written size differs from returned size"
+    assert len(data) <= 1024 * 1024, "PNG over the 1 MiB cap"
+    w, h = struct.unpack(">II", data[16:24])
+    assert (w, h) == (W, H), f"PNG is {w}x{h}, expected {W}x{H}"
 
 
 if __name__ == "__main__":
